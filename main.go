@@ -1,13 +1,18 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"os"
 
 	"github.com/kasteion/gator/internal/config"
+	"github.com/kasteion/gator/internal/database"
+
+	_ "github.com/lib/pq"
 )
 
 type state struct {
+	db *database.Queries
 	config *config.Config
 }
 
@@ -19,19 +24,25 @@ func main() {
 
 	s := state{ config: &cfg }
 
+	db, err := sql.Open("postgres", s.config.DBURL)
+	if err != nil {
+		log.Fatalf("error opening db connection: %v", err)
+	}
+
+	s.db = database.New(db)
+
 	cmds := commands{
 		registeredCommands: map[string]func(*state, command) error{},
 	}
 
 	cmds.register("login", handlerLogin)
+	cmds.register("register", handlerRegister)
 
 	args := os.Args
 
 	if len(args) < 2 {
 		log.Fatal("missing arguments")
 	}
-
-
 
 	cmd := command{
 		name: args[1],
