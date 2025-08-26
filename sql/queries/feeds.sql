@@ -12,3 +12,7 @@ RETURNING *;
 
 -- name: GetFeeds :many
 SELECT * FROM feeds ORDER BY name;
+
+-- name: GetFeedByURL :one
+SELECT * FROM feeds
+    WHERE url = $1;

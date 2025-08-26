@@ -32,7 +32,7 @@ func main() {
 	s.db = database.New(db)
 
 	cmds := commands{
-		registeredCommands: map[string]func(*state, command) error{},
+		registeredCommands: make(map[string]func(*state, command) error),
 	}
 
 	cmds.register("login", handlerLogin)
@@ -42,6 +42,8 @@ func main() {
 	cmds.register("agg", handlerAgg)
 	cmds.register("addfeed", handlerAddfeed)
 	cmds.register("feeds", handlerFeeds)
+	cmds.register("follow", handlerFollow)
+	cmds.register("following", handlerFollowing)
 
 	args := os.Args
 
