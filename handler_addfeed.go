@@ -10,18 +10,13 @@ import (
 	"github.com/kasteion/gator/internal/database"
 )
 
-func handlerAddfeed(s *state, cmd command) error {
+func handlerAddfeed(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 2 {
 		return fmt.Errorf("usage: %s <name> <url>", cmd.name)
 	}
 
 	name := cmd.args[0]
 	url := cmd.args[1]
-
-	user, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("error getting user: %w", err)
-	}
 
 	feed, err := s.db.CreateFeed(
 		context.Background(), 

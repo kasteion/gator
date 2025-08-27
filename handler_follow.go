@@ -9,17 +9,12 @@ import (
 	"github.com/kasteion/gator/internal/database"
 )
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 1 {
 		return fmt.Errorf("usage: %s <url>", cmd.name)
 	}
 
 	url := cmd.args[0]
-
-	user, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("error getting user: %w", err)
-	}
 
 	feed, err := s.db.GetFeedByURL(context.Background(), url)
 	if err != nil {
