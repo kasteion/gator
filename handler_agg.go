@@ -3,18 +3,36 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/kasteion/gator/internal/database"
 )
 
 func handlerAgg(s *state, cmd command) error {
-	feed, err :=fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
-	if err != nil {
-		return fmt.Errorf("error fetching feed: %w", err)
+	if len(cmd.args) != 1 {
+		return fmt.Errorf("usage %s <time_between_reqs>", cmd.name)
 	}
 
-	fmt.Printf("Feed: %+v\n", feed)
-	// printFeed(*feed)
+	duration, err := time.ParseDuration(cmd.args[0])
+	if err != nil {
+		return fmt.Errorf("error parsing duration: %w", err)
+	}
 
-	return  nil
+	fmt.Printf("Collecting feeds every %v\n", duration)
+
+	ticker := time.NewTicker(duration)
+	for ; ; <-ticker.C {
+		// fmt.Println("#########################")
+		// feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+		// if err != nil {
+			// return fmt.Errorf("error fetching feed: %w", err)
+		// }
+
+		// fmt.Printf("Feed: %+v\n", feed)
+		scrapeFeeds(context.Background(), s)
+	}
+
+	// printFeed(*feed)
 }
 
 // func printFeed(feed RSSFeed) {
@@ -28,3 +46,30 @@ func handlerAgg(s *state, cmd command) error {
 // 		fmt.Printf("  %s\n", item.PubDate)
 // 	}
 // }
+
+func scrapeFeeds(ctx context.Context, s *state) {
+	feed, err := s.db.GetNextFeedToFetch(ctx)
+	if err != nil {
+		return 
+	}
+
+	err = s.db.MarkFeedFetched(ctx, 
+		database.MarkFeedFetchedParams{
+			ID: feed.ID,
+			UpdatedAt: time.Now(),
+		},
+	)
+	if err != nil {
+		return 
+	}
+
+	rssFeed, err := fetchFeed(ctx, feed.Url)
+	if err != nil {
+		return 
+	}
+
+	fmt.Println(rssFeed.Channel.Title)
+	for _, item := range rssFeed.Channel.Item {
+		fmt.Println(item.Title)
+	}
+}
