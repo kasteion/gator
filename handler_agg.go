@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/kasteion/gator/internal/database"
 )
 
@@ -68,8 +71,30 @@ func scrapeFeeds(ctx context.Context, s *state) {
 		return 
 	}
 
-	fmt.Println(rssFeed.Channel.Title)
+	// fmt.Println(rssFeed.Channel.Title)
 	for _, item := range rssFeed.Channel.Item {
-		fmt.Println(item.Title)
+		publishedAt, err := time.Parse(time.RFC1123Z, item.PubDate)
+		if err != nil {
+			log.Println(err)
+		}
+
+		_, err = s.db.CreatePost(
+			ctx,
+			database.CreatePostParams{
+				ID: uuid.New(),
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+				Title: item.Title,
+				Url: item.Link,
+				Description: item.Description,
+				PublishedAt: publishedAt,
+				FeedID: feed.ID,
+			},
+		)
+
+		if err != nil && strings.Compare("pq: duplicate key value violates unique constraint \"posts_url_key\"", err.Error()) != 0 {
+			log.Println(err)
+			
+		}
 	}
 }
